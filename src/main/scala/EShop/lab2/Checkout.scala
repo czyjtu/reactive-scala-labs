@@ -45,9 +45,6 @@ class Checkout extends Actor {
   private def paymentTimer: Cancellable =
     scheduler.scheduleOnce(paymentTimerDuration, self, ExpirePayment)
 
-  var deliveryMethod = ""
-  var paymentMethd = ""
-
   def receive: Receive = LoggingReceive { case StartCheckout =>
     context become selectingDelivery(checkoutTimer)
   }
@@ -57,7 +54,6 @@ class Checkout extends Actor {
       context become cancelled
 
     case SelectDeliveryMethod(method) =>
-      this.deliveryMethod = method
       timer.cancel()
       context become selectingPaymentMethod(checkoutTimer)
   }
@@ -67,7 +63,6 @@ class Checkout extends Actor {
       context become cancelled
 
     case SelectPayment(method) => 
-      this.paymentMethd = method 
       timer.cancel()
       context become processingPayment(paymentTimer)
   }
