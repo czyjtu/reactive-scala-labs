@@ -30,6 +30,8 @@ object Checkout {
 }
 
 class Checkout extends Actor {
+  import context._
+  import Checkout._
 
   private val scheduler = context.system.scheduler
   private val log       = Logging(context.system, this)
@@ -37,16 +39,44 @@ class Checkout extends Actor {
   val checkoutTimerDuration = 1 seconds
   val paymentTimerDuration  = 1 seconds
 
-  def receive: Receive = ???
+  private def checkoutTimer: Cancellable =
+    scheduler.scheduleOnce(checkoutTimerDuration, self, ExpireCheckout)
 
-  def selectingDelivery(timer: Cancellable): Receive = ???
+  private def paymentTimer: Cancellable =
+    scheduler.scheduleOnce(paymentTimerDuration, self, ExpirePayment)
 
-  def selectingPaymentMethod(timer: Cancellable): Receive = ???
+  def receive: Receive = LoggingReceive { case StartCheckout =>
+    context become selectingDelivery(checkoutTimer)
+  }
 
-  def processingPayment(timer: Cancellable): Receive = ???
+  def selectingDelivery(timer: Cancellable): Receive = LoggingReceive {
+    case CancelCheckout | ExpireCheckout  =>
+      context become cancelled
 
-  def cancelled: Receive = ???
+    case SelectDeliveryMethod(method) =>
+      timer.cancel()
+      context become selectingPaymentMethod(checkoutTimer)
+  }
 
-  def closed: Receive = ???
+  def selectingPaymentMethod(timer: Cancellable): Receive = LoggingReceive {
+    case CancelCheckout | ExpireCheckout  =>
+      context become cancelled
+
+    case SelectPayment(method) => 
+      timer.cancel()
+      context become processingPayment(paymentTimer)
+  }
+
+  def processingPayment(timer: Cancellable): Receive = LoggingReceive {
+    case CancelCheckout | ExpirePayment  =>
+      context become cancelled
+
+    case ConfirmPaymentReceived => 
+      context become closed 
+  }
+
+  def cancelled: Receive = _ => context stop self 
+
+  def closed: Receive = _ => context stop self 
 
 }
