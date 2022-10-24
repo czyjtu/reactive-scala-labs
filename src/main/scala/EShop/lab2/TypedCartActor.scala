@@ -10,6 +10,8 @@ import EShop.lab3.OrderManager
 
 object TypedCartActor {
 
+  def apply(): Behavior[Command] = new TypedCartActor().start
+
   sealed trait Command
   case class AddItem(item: Any)                                             extends Command
   case class RemoveItem(item: Any)                                          extends Command
@@ -27,7 +29,7 @@ class TypedCartActor {
 
   import TypedCartActor._
 
-  val cartTimerDuration: FiniteDuration = 5 seconds
+  val cartTimerDuration: FiniteDuration = 10 seconds
 
   private def scheduleTimer(context: ActorContext[TypedCartActor.Command]): Cancellable =
     context.scheduleOnce(cartTimerDuration, context.self, ExpireCart)
@@ -56,8 +58,11 @@ class TypedCartActor {
       case AddItem(item) =>
         timer.cancel()
         nonEmpty(cart.addItem(item), scheduleTimer(context))
-      case StartCheckout(_) =>
+      case StartCheckout(orderActorRef) =>
         timer.cancel()
+        val checkoutActor = context.spawn(TypedCheckout(context.self), s"checkout")
+        checkoutActor ! TypedCheckout.StartCheckout
+        orderActorRef ! OrderManager.ConfirmCheckoutStarted(checkoutActor)
         inCheckout(cart)
       case _ =>
         Behaviors.same
