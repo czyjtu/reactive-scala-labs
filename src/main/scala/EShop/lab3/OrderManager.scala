@@ -99,10 +99,8 @@ class OrderManager {
   ): Behavior[OrderManager.Command] = Behaviors.receive((context, msg) => {
     msg match {
       case Pay(sender) => 
-        // sender ! Done
         paymentActorRef ! Payment.DoPayment
-        sender ! Done 
-        Behaviors.same
+        inPayment(paymentActorRef, sender)
       case ConfirmPaymentReceived =>
         senderRef ! Done 
         finished
