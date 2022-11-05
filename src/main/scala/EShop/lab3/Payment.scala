@@ -6,6 +6,12 @@ import akka.actor.typed.{ActorRef, Behavior}
 
 object Payment {
 
+  def apply(
+    method: String,
+    orderManager: ActorRef[OrderManager.Command],
+    checkout: ActorRef[TypedCheckout.Command]
+  ): Behavior[Command] = new Payment(method, orderManager, checkout).start
+
   sealed trait Command
   case object DoPayment extends Command
 }
@@ -18,6 +24,11 @@ class Payment(
 
   import Payment._
 
-  def start: Behavior[Payment.Command] = ???
+  def start: Behavior[Payment.Command] = Behaviors.receiveMessage {
+    case DoPayment => 
+      orderManager ! OrderManager.ConfirmPaymentReceived
+      checkout ! TypedCheckout.ConfirmPaymentReceived
+      Behaviors.same 
+  }
 
 }
