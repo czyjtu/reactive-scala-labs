@@ -54,7 +54,7 @@ class OrderManager {
         case Buy(sender) =>
           cartActor ! TypedCartActor.StartCheckout(context.self)
           inCheckout(cartActor, sender)
-        case _ => 
+        case _ =>
           Behaviors.same
       }
     )
@@ -62,52 +62,56 @@ class OrderManager {
   def inCheckout(
     cartActorRef: ActorRef[TypedCartActor.Command],
     senderRef: ActorRef[Ack]
-  ): Behavior[OrderManager.Command] = Behaviors.receive((context, msg) =>
+  ): Behavior[OrderManager.Command] =
+    Behaviors.receive((context, msg) =>
       msg match {
-        case ConfirmCheckoutStarted(checkoutActor) => 
-          senderRef ! Done 
+        case ConfirmCheckoutStarted(checkoutActor) =>
+          senderRef ! Done
           inCheckout(checkoutActor)
-        case _ => 
-          Behaviors.same 
+        case _ =>
+          Behaviors.same
       }
-  )
+    )
 
-  def inCheckout(checkoutActorRef: ActorRef[TypedCheckout.Command]): Behavior[OrderManager.Command] = Behaviors.receive((context, msg) => {
-    msg match {
-      case SelectDeliveryAndPaymentMethod(delivery, payment, sender) => 
-        checkoutActorRef ! TypedCheckout.SelectDeliveryMethod(delivery)
-        checkoutActorRef ! TypedCheckout.SelectPayment(payment, context.self)
-        inPayment(sender)
-      case _ => 
-        Behaviors.same 
-    }
-  })
+  def inCheckout(checkoutActorRef: ActorRef[TypedCheckout.Command]): Behavior[OrderManager.Command] =
+    Behaviors.receive((context, msg) => {
+      msg match {
+        case SelectDeliveryAndPaymentMethod(delivery, payment, sender) =>
+          checkoutActorRef ! TypedCheckout.SelectDeliveryMethod(delivery)
+          checkoutActorRef ! TypedCheckout.SelectPayment(payment, context.self)
+          inPayment(sender)
+        case _ =>
+          Behaviors.same
+      }
+    })
 
-  def inPayment(senderRef: ActorRef[Ack]): Behavior[OrderManager.Command] =  Behaviors.receive((context, msg) => {
-    msg match {
-      case ConfirmPaymentStarted(paymentRef) => 
-        senderRef ! Done 
-        inPayment(paymentRef, senderRef)
-      case _ => 
-        Behaviors.same 
-    }
-  })
+  def inPayment(senderRef: ActorRef[Ack]): Behavior[OrderManager.Command] =
+    Behaviors.receive((context, msg) => {
+      msg match {
+        case ConfirmPaymentStarted(paymentRef) =>
+          senderRef ! Done
+          inPayment(paymentRef, senderRef)
+        case _ =>
+          Behaviors.same
+      }
+    })
 
   def inPayment(
     paymentActorRef: ActorRef[Payment.Command],
     senderRef: ActorRef[Ack]
-  ): Behavior[OrderManager.Command] = Behaviors.receive((context, msg) => {
-    msg match {
-      case Pay(sender) => 
-        paymentActorRef ! Payment.DoPayment
-        inPayment(paymentActorRef, sender)
-      case ConfirmPaymentReceived =>
-        senderRef ! Done 
-        finished
-      case _ => 
-        Behaviors.same
-    }
-  })
+  ): Behavior[OrderManager.Command] =
+    Behaviors.receive((context, msg) => {
+      msg match {
+        case Pay(sender) =>
+          paymentActorRef ! Payment.DoPayment
+          inPayment(paymentActorRef, sender)
+        case ConfirmPaymentReceived =>
+          senderRef ! Done
+          finished
+        case _ =>
+          Behaviors.same
+      }
+    })
 
   def finished: Behavior[OrderManager.Command] = Behaviors.stopped
 }

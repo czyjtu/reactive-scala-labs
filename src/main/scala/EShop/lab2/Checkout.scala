@@ -45,38 +45,43 @@ class Checkout extends Actor {
   private def paymentTimer: Cancellable =
     scheduler.scheduleOnce(paymentTimerDuration, self, ExpirePayment)
 
-  def receive: Receive = LoggingReceive { case StartCheckout =>
-    context become selectingDelivery(checkoutTimer)
-  }
+  def receive: Receive =
+    LoggingReceive {
+      case StartCheckout =>
+        context become selectingDelivery(checkoutTimer)
+    }
 
-  def selectingDelivery(timer: Cancellable): Receive = LoggingReceive {
-    case CancelCheckout | ExpireCheckout  =>
-      context become cancelled
+  def selectingDelivery(timer: Cancellable): Receive =
+    LoggingReceive {
+      case CancelCheckout | ExpireCheckout =>
+        context become cancelled
 
-    case SelectDeliveryMethod(method) =>
-      timer.cancel()
-      context become selectingPaymentMethod(checkoutTimer)
-  }
+      case SelectDeliveryMethod(method) =>
+        timer.cancel()
+        context become selectingPaymentMethod(checkoutTimer)
+    }
 
-  def selectingPaymentMethod(timer: Cancellable): Receive = LoggingReceive {
-    case CancelCheckout | ExpireCheckout  =>
-      context become cancelled
+  def selectingPaymentMethod(timer: Cancellable): Receive =
+    LoggingReceive {
+      case CancelCheckout | ExpireCheckout =>
+        context become cancelled
 
-    case SelectPayment(method) => 
-      timer.cancel()
-      context become processingPayment(paymentTimer)
-  }
+      case SelectPayment(method) =>
+        timer.cancel()
+        context become processingPayment(paymentTimer)
+    }
 
-  def processingPayment(timer: Cancellable): Receive = LoggingReceive {
-    case CancelCheckout | ExpirePayment  =>
-      context become cancelled
+  def processingPayment(timer: Cancellable): Receive =
+    LoggingReceive {
+      case CancelCheckout | ExpirePayment =>
+        context become cancelled
 
-    case ConfirmPaymentReceived => 
-      context become closed 
-  }
+      case ConfirmPaymentReceived =>
+        context become closed
+    }
 
-  def cancelled: Receive = _ => context stop self 
+  def cancelled: Receive = _ => context stop self
 
-  def closed: Receive = _ => context stop self 
+  def closed: Receive = _ => context stop self
 
 }

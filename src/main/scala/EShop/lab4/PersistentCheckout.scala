@@ -31,35 +31,37 @@ class PersistentCheckout {
   def commandHandler(
     context: ActorContext[Command],
     cartActor: ActorRef[TypedCartActor.Command]
-  ): (State, Command) => Effect[Event, State] = (state, command) => {
-    state match {
-      case WaitingForStart =>
-        ???
+  ): (State, Command) => Effect[Event, State] =
+    (state, command) => {
+      state match {
+        case WaitingForStart =>
+          ???
 
-      case SelectingDelivery(_) =>
-        ???
+        case SelectingDelivery(_) =>
+          ???
 
-      case SelectingPaymentMethod(_) =>
-        ???
+        case SelectingPaymentMethod(_) =>
+          ???
 
-      case ProcessingPayment(_) =>
-        ???
+        case ProcessingPayment(_) =>
+          ???
 
-      case Cancelled =>
-        ???
+        case Cancelled =>
+          ???
 
-      case Closed =>
-        ???
+        case Closed =>
+          ???
+      }
     }
-  }
 
-  def eventHandler(context: ActorContext[Command]): (State, Event) => State = (state, event) => {
-    event match {
-      case CheckoutStarted           => ???
-      case DeliveryMethodSelected(_) => ???
-      case PaymentStarted(_)         => ???
-      case CheckOutClosed            => ???
-      case CheckoutCancelled         => ???
+  def eventHandler(context: ActorContext[Command]): (State, Event) => State =
+    (state, event) => {
+      event match {
+        case CheckoutStarted           => ???
+        case DeliveryMethodSelected(_) => ???
+        case PaymentStarted(_)         => ???
+        case CheckOutClosed            => ???
+        case CheckoutCancelled         => ???
+      }
     }
-  }
 }
