@@ -1,21 +1,14 @@
 package EShop.lab2
 
+import EShop.lab3.{OrderManager, Payment}
 import akka.actor.Cancellable
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 
 import scala.language.postfixOps
 import scala.concurrent.duration._
-import EShop.lab3.{OrderManager, Payment}
 
 object TypedCheckout {
-
-  def apply(cartActor: ActorRef[TypedCartActor.Command]) = new TypedCheckout(cartActor).start
-
-  sealed trait Data
-  case object Uninitialized                               extends Data
-  case class SelectingDeliveryStarted(timer: Cancellable) extends Data
-  case class ProcessingPaymentStarted(timer: Cancellable) extends Data
 
   sealed trait Command
   case object StartCheckout                                                                  extends Command
@@ -25,6 +18,8 @@ object TypedCheckout {
   case class SelectPayment(payment: String, orderManagerRef: ActorRef[OrderManager.Command]) extends Command
   case object ExpirePayment                                                                  extends Command
   case object ConfirmPaymentReceived                                                         extends Command
+  case object PaymentRejected                                                                extends Command
+  case object PaymentRestarted                                                               extends Command
 
   sealed trait Event
   case object CheckOutClosed                                    extends Event
