@@ -1,6 +1,7 @@
 package EShop.lab4
 
 import EShop.lab3.OrderManager
+import EShop.lab2.Cart
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
 import akka.persistence.typed.PersistenceId
@@ -157,5 +158,53 @@ class PersistentCartActorTest
 
     resultAdd2.hasNoEvents shouldBe true
     resultAdd2.state shouldBe Empty
+  }
+
+  it should "contain item after restart" in {
+    val result = eventSourcedTestKit.runCommand(AddItem("Cymbelin"))
+
+    result.event.isInstanceOf[ItemAdded] shouldBe true
+    result.state.isInstanceOf[NonEmpty] shouldBe true
+
+    val restartResult = eventSourcedTestKit.restart()
+
+    restartResult.state.isInstanceOf[NonEmpty] shouldBe true
+    restartResult.state.cart shouldEqual Cart.empty.addItem("Cymbelin")
+  }
+
+  it should "be mepty after restart" in {
+    val result = eventSourcedTestKit.runCommand(AddItem("Cymbelin"))
+
+    result.event.isInstanceOf[ItemAdded] shouldBe true
+    result.state.isInstanceOf[NonEmpty] shouldBe true
+    val result2 = eventSourcedTestKit.runCommand(RemoveItem("Cymbelin"))
+
+    val restartResult = eventSourcedTestKit.restart()
+
+    restartResult.state shouldBe Empty 
+  }
+
+  it should "close checkout properly after restart" in {
+    val resultAdd = eventSourcedTestKit.runCommand(AddItem("Cymbelin"))
+
+    resultAdd.event.isInstanceOf[ItemAdded] shouldBe true
+    resultAdd.state.isInstanceOf[NonEmpty] shouldBe true
+
+    val resultStartCheckout =
+      eventSourcedTestKit.runCommand(StartCheckout(testKit.createTestProbe[Any]().ref))
+
+    resultStartCheckout.event.isInstanceOf[CheckoutStarted] shouldBe true
+    resultStartCheckout.state.isInstanceOf[InCheckout] shouldBe true
+
+    val restartResult = eventSourcedTestKit.restart()
+
+    restartResult.state.isInstanceOf[InCheckout] shouldBe true
+    restartResult.state.cart shouldEqual Cart.empty.addItem("Cymbelin")
+
+    val resultCancelCheckout =
+      eventSourcedTestKit.runCommand(ConfirmCheckoutClosed)
+
+    resultCancelCheckout.event shouldBe CheckoutClosed
+    resultCancelCheckout.state shouldBe Empty
   }
 }
