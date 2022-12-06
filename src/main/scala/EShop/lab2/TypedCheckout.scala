@@ -7,6 +7,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 
 import scala.language.postfixOps
 import scala.concurrent.duration._
+import akka.protobufv3.internal.Type
 
 object TypedCheckout {
 
@@ -35,6 +36,9 @@ object TypedCheckout {
   case object Closed                                    extends State(None)
   case object Cancelled                                 extends State(None)
   case class ProcessingPayment(timer: Cancellable)      extends State(Some(timer))
+
+  def apply(cartAcor: ActorRef[TypedCartActor.Command]): Behavior[TypedCheckout.Command] =
+    new TypedCheckout(cartAcor).start
 }
 
 class TypedCheckout(
