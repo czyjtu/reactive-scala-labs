@@ -181,7 +181,7 @@ class PersistentCartActorTest
 
     val restartResult = eventSourcedTestKit.restart()
 
-    restartResult.state shouldBe Empty 
+    restartResult.state shouldBe Empty
   }
 
   it should "close checkout properly after restart" in {

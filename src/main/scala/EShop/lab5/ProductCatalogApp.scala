@@ -40,9 +40,7 @@ class SearchService() {
     val lowerCasedKeyWords = keyWords.map(_.toLowerCase)
     brandItemsMap
       .getOrElse(brand.toLowerCase, Nil)
-      .map(
-        item => (lowerCasedKeyWords.count(item.name.toLowerCase.contains), item)
-      )
+      .map(item => (lowerCasedKeyWords.count(item.name.toLowerCase.contains), item))
       .sortBy(-_._1) // sort in desc order
       .take(10)
       .map(_._2)
@@ -60,15 +58,16 @@ object ProductCatalog {
   sealed trait Ack
   case class Items(items: List[Item]) extends Ack
 
-  def apply(searchService: SearchService): Behavior[Query] = Behaviors.setup { context =>
-    context.system.receptionist ! Receptionist.register(ProductCatalogServiceKey, context.self)
+  def apply(searchService: SearchService): Behavior[Query] =
+    Behaviors.setup { context =>
+      context.system.receptionist ! Receptionist.register(ProductCatalogServiceKey, context.self)
 
-    Behaviors.receiveMessage {
-      case GetItems(brand, productKeyWords, sender) =>
-        sender ! Items(searchService.search(brand, productKeyWords))
-        Behaviors.same
+      Behaviors.receiveMessage {
+        case GetItems(brand, productKeyWords, sender) =>
+          sender ! Items(searchService.search(brand, productKeyWords))
+          Behaviors.same
+      }
     }
-  }
 }
 
 object ProductCatalogApp extends App {
